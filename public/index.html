@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#07081a">
+<title>ParkSense</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   ROOT TOKENS
+═══════════════════════════════════════════ */
+:root {
+  --bg:         #07081a;
+  --bg2:        #0c0e26;
+  --card:       #0f1130;
+  --card2:      #141840;
+  --border:     rgba(255,255,255,0.07);
+  --border2:    rgba(255,255,255,0.13);
+  --blue:       #3d8bff;
+  --blue2:      #6ab0ff;
+  --purple:     #8b5cf6;
+  --green:      #22d78f;
+  --orange:     #f59e0b;
+  --red:        #f43f5e;
+  --text:       #eef0ff;
+  --text2:      #6b7280;
+  --text3:      #9ca3b8;
+  --glow-blue:  rgba(61,139,255,0.18);
+  --glow-green: rgba(34,215,143,0.18);
+  --glow-pur:   rgba(139,92,246,0.18);
+  --radius:     20px;
+  --radius-sm:  12px;
+}
+
+/* ═══════════════════════════════════════════
+   BASE
+═══════════════════════════════════════════ */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { height:100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Starfield background */
+body::before {
+  content:'';
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 5%,  rgba(61,139,255,0.09) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 40% at 85% 90%, rgba(139,92,246,0.08) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 30% at 50% 50%, rgba(34,215,143,0.04) 0%, transparent 70%);
+}
+
+/* ═══════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════ */
+.app {
+  position:relative; z-index:1;
+  max-width:480px; margin:0 auto;
+  padding:0 0 100px;
+  min-height:100vh;
+}
+
+/* ── Tabs ───────────────────────────────── */
+.tab-bar {
+  position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+  width:100%; max-width:480px;
+  z-index:100;
+  background: rgba(7,8,26,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display:flex;
+  padding: 8px 8px 18px;
+  gap:4px;
+}
+
+.tab-btn {
+  flex:1; display:flex; flex-direction:column; align-items:center;
+  gap:4px; padding:8px 4px;
+  background:none; border:none; cursor:pointer;
+  border-radius:14px; transition:background 0.2s;
+  color: var(--text2);
+}
+.tab-btn.active { background:rgba(61,139,255,0.12); color:var(--blue); }
+.tab-btn .tab-icon { font-size:20px; line-height:1; }
+.tab-btn .tab-lbl { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; font-family:'Outfit',sans-serif; }
+
+/* ── Pages ──────────────────────────────── */
+.page { display:none; padding:20px 16px; }
+.page.active { display:block; }
+
+/* ═══════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════ */
+.top-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 16px 0;
+  margin-bottom:20px;
+}
+
+.brand { display:flex; align-items:center; gap:10px; }
+.brand-logo {
+  width:38px; height:38px;
+  background: linear-gradient(135deg,var(--blue),var(--purple));
+  border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px;
+  box-shadow: 0 4px 18px rgba(61,139,255,0.35);
+}
+.brand-name {
+  font-size:20px; font-weight:900; letter-spacing:-0.5px;
+  background: linear-gradient(135deg,#fff 40%,var(--blue));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+
+.live-badge {
+  display:flex; align-items:center; gap:6px;
+  background:rgba(34,215,143,0.1);
+  border:1px solid rgba(34,215,143,0.2);
+  border-radius:20px; padding:5px 10px;
+  font-size:10px; font-weight:700; color:var(--green);
+  letter-spacing:1px; text-transform:uppercase;
+}
+.live-dot {
+  width:6px; height:6px; border-radius:50%; background:var(--green);
+  animation: blink 1.4s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ═══════════════════════════════════════════
+   CARDS
+═══════════════════════════════════════════ */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-title {
+  font-size:10px; font-weight:700; color:var(--text2);
+  letter-spacing:2px; text-transform:uppercase;
+  display:flex; align-items:center; gap:8px;
+  margin-bottom:16px;
+}
+.card-title-bar {
+  width:3px; height:14px; border-radius:2px;
+  background: linear-gradient(var(--blue),var(--purple));
+}
+
+/* ═══════════════════════════════════════════
+   MOTION STATE CARD
+═══════════════════════════════════════════ */
+.state-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding:24px 20px 20px;
+  margin-bottom:14px;
+  overflow:hidden; position:relative;
+  transition: border-color 0.6s, background 0.6s;
+}
+.state-card.driving  { border-color:rgba(61,139,255,0.4); background: linear-gradient(145deg,rgba(61,139,255,0.07),var(--card)); }
+.state-card.walking  { border-color:rgba(34,215,143,0.4); background: linear-gradient(145deg,rgba(34,215,143,0.06),var(--card)); }
+.state-card.stationary { border-color:var(--border); }
+
+.state-glow {
+  position:absolute; top:-60px; right:-60px;
+  width:160px; height:160px; border-radius:50%;
+  pointer-events:none; transition:background 0.6s;
+}
+.driving  .state-glow { background:radial-gradient(circle,rgba(61,139,255,0.2),transparent 70%); }
+.walking  .state-glow { background:radial-gradient(circle,rgba(34,215,143,0.2),transparent 70%); }
+.stationary .state-glow { background:none; }
+
+.state-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+
+.state-emoji {
+  font-size:54px; line-height:1;
+  transition:all 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  filter: drop-shadow(0 6px 16px rgba(0,0,0,0.6));
+}
+.state-emoji.animate { animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes popIn { 0%{transform:scale(0.5) rotate(-10deg);opacity:0} 100%{transform:scale(1) rotate(0);opacity:1} }
+
+.state-text { text-align:right; }
+.state-sub { font-size:10px; font-weight:700; color:var(--text2); letter-spacing:2px; text-transform:uppercase; margin-bottom:5px; }
+.state-main {
+  font-size:30px; font-weight:900; letter-spacing:-1px;
+  transition:color 0.4s;
+}
+.state-main.driving   { color:var(--blue); }
+.state-main.walking   { color:var(--green); }
+.state-main.stationary { color:var(--text2); }
+
+.since-label { font-size:11px; color:var(--text2); margin-top:4px; }
+.since-time  { font-size:11px; color:var(--text3); font-family:'JetBrains Mono',monospace; }
+
+/* Speed gauge */
+.speed-gauge-wrap { margin-bottom:16px; }
+.speed-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.speed-lbl { font-size:11px; color:var(--text2); font-weight:600; }
+.speed-num { font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--blue); font-weight:700; }
+.speed-track { height:8px; background:rgba(255,255,255,0.06); border-radius:8px; overflow:hidden; }
+.speed-fill {
+  height:100%; border-radius:8px; width:0%;
+  background: linear-gradient(90deg,var(--green),var(--blue),var(--purple));
+  transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 0 8px rgba(61,139,255,0.5);
+}
+
+/* Metrics grid */
+.metrics { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+.metric {
+  background:rgba(255,255,255,0.03); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:12px 8px; text-align:center;
+}
+.metric-n { font-family:'JetBrains Mono',monospace; font-size:17px; font-weight:700; color:var(--text); display:block; margin-bottom:3px; }
+.metric-l { font-size:9px; color:var(--text2); font-weight:700; letter-spacing:1.5px; text-transform:uppercase; }
+
+/* ═══════════════════════════════════════════
+   PARKING CARD
+═══════════════════════════════════════════ */
+.parking-card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--radius); padding:20px;
+  margin-bottom:14px; position:relative;
+  transition: border-color 0.4s;
+}
+.parking-card.has-spot { border-color:rgba(139,92,246,0.35); }
+
+.park-inner { display:flex; gap:14px; align-items:flex-start; }
+.park-icon-wrap {
+  width:48px; height:48px; flex-shrink:0;
+  background:linear-gradient(135deg,var(--purple),#a855f7);
+  border-radius:16px; display:flex; align-items:center; justify-content:center;
+  font-size:22px; box-shadow:0 6px 20px rgba(139,92,246,0.35);
+}
+.park-info { flex:1; min-width:0; }
+.park-when { font-size:13px; font-weight:700; color:var(--text); margin-bottom:3px; }
+.park-ago  { font-size:11px; color:var(--purple); font-weight:600; margin-bottom:5px; }
+.park-coords { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text2); margin-bottom:4px; word-break:break-all; }
+.park-addr { font-size:11px; color:var(--text3); line-height:1.5; }
+.park-acc  { font-size:10px; color:var(--text2); margin-top:3px; }
+
+.no-park { text-align:center; padding:24px 0 8px; }
+.no-park-icon { font-size:40px; opacity:0.25; margin-bottom:8px; }
+.no-park-txt { font-size:13px; color:var(--text2); }
+
+.btn {
+  width:100%; display:flex; align-items:center; justify-content:center; gap:8px;
+  padding:13px; border-radius:14px; border:none;
+  font-family:'Outfit',sans-serif; font-size:13px; font-weight:700;
+  cursor:pointer; transition:all 0.2s; margin-top:12px;
+}
+.btn:active { transform:scale(0.97); }
+.btn-primary {
+  background:linear-gradient(135deg,var(--purple),var(--blue));
+  color:white; box-shadow:0 4px 20px rgba(139,92,246,0.3);
+}
+.btn-primary:disabled { opacity:0.3; cursor:not-allowed; transform:none; }
+.btn-ghost {
+  background:rgba(255,255,255,0.04); border:1px dashed rgba(255,255,255,0.15);
+  color:var(--text2);
+}
+.btn-ghost:hover { background:rgba(255,255,255,0.07); color:var(--text); }
+.btn-danger {
+  background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.25);
+  color:var(--red);
+}
+
+/* ═══════════════════════════════════════════
+   HISTORY LIST
+═══════════════════════════════════════════ */
+.hist-list { display:flex; flex-direction:column; gap:10px; }
+
+.hist-item {
+  display:flex; align-items:center; gap:12px;
+  padding:12px; background:rgba(255,255,255,0.02);
+  border:1px solid var(--border); border-radius:14px;
+  position:relative; overflow:hidden;
+  animation: slideIn 0.3s ease;
+}
+@keyframes slideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+.hist-icon {
+  width:36px; height:36px; border-radius:12px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; font-size:16px;
+}
+.hist-icon.driving { background:rgba(61,139,255,0.15); }
+.hist-icon.walking { background:rgba(34,215,143,0.15); }
+
+.hist-info { flex:1; min-width:0; }
+.hist-title { font-size:12px; font-weight:700; color:var(--text); margin-bottom:2px; }
+.hist-sub   { font-size:10px; color:var(--text2); font-family:'JetBrains Mono',monospace; }
+.hist-meta  { font-size:10px; color:var(--text2); }
+
+.hist-dur {
+  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700;
+  background:rgba(255,255,255,0.05); padding:3px 8px; border-radius:8px;
+  color:var(--text3); flex-shrink:0;
+}
+
+.empty-hist { text-align:center; padding:28px 0 8px; }
+.empty-hist-icon { font-size:40px; opacity:0.2; margin-bottom:8px; }
+.empty-hist-txt  { font-size:13px; color:var(--text2); }
+
+/* ═══════════════════════════════════════════
+   STATS PAGE
+═══════════════════════════════════════════ */
+.stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+.stat-card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--radius); padding:18px 16px;
+  position:relative; overflow:hidden;
+}
+.stat-card::before {
+  content:''; position:absolute; top:-20px; right:-20px;
+  width:80px; height:80px; border-radius:50%;
+  background:var(--accent-glow, rgba(61,139,255,0.1));
+}
+.stat-icon { font-size:22px; margin-bottom:10px; display:block; }
+.stat-val  { font-size:28px; font-weight:900; color:var(--text); letter-spacing:-1px; display:block; margin-bottom:3px; }
+.stat-lbl  { font-size:10px; color:var(--text2); font-weight:700; letter-spacing:1.5px; text-transform:uppercase; }
+
+.big-stat-card {
+  background:linear-gradient(135deg,rgba(61,139,255,0.1),rgba(139,92,246,0.08));
+  border:1px solid rgba(61,139,255,0.2);
+  border-radius:var(--radius); padding:20px; margin-bottom:14px;
+}
+.big-stat-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
+.big-stat-title { font-size:10px; font-weight:700; color:var(--text2); letter-spacing:2px; text-transform:uppercase; }
+.big-stat-icon { font-size:24px; }
+.big-stat-val { font-size:42px; font-weight:900; color:var(--blue); letter-spacing:-2px; margin-bottom:4px; }
+.big-stat-sub { font-size:12px; color:var(--text2); }
+
+/* ═══════════════════════════════════════════
+   PERMISSION / ONBOARDING
+═══════════════════════════════════════════ */
+.onboard {
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; min-height:90vh; padding:32px; text-align:center;
+}
+.onboard-anim { font-size:72px; margin-bottom:28px; animation:floatAnim 3s ease-in-out infinite; }
+@keyframes floatAnim { 0%,100%{transform:translateY(0) rotate(0)} 50%{transform:translateY(-12px) rotate(3deg)} }
+.onboard-title {
+  font-size:30px; font-weight:900; margin-bottom:12px; letter-spacing:-1px;
+  background:linear-gradient(135deg,#fff 30%,var(--blue)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+.onboard-desc { font-size:14px; color:var(--text2); line-height:1.8; margin-bottom:36px; max-width:300px; }
+.onboard-features { display:flex; flex-direction:column; gap:10px; margin-bottom:36px; text-align:right; }
+.onboard-feature {
+  display:flex; align-items:center; gap:12px;
+  background:rgba(255,255,255,0.04); border:1px solid var(--border);
+  border-radius:14px; padding:12px 14px;
+}
+.onboard-feature-icon { font-size:18px; }
+.onboard-feature-text { font-size:13px; color:var(--text3); }
+.onboard-feature-text strong { color:var(--text); font-weight:700; }
+.start-btn {
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  border:none; border-radius:16px; padding:16px 44px;
+  color:white; font-family:'Outfit',sans-serif; font-size:16px; font-weight:800;
+  cursor:pointer; box-shadow:0 8px 32px rgba(61,139,255,0.35);
+  transition:transform 0.2s, box-shadow 0.2s; width:100%;
+}
+.start-btn:active { transform:scale(0.97); box-shadow:0 4px 16px rgba(61,139,255,0.2); }
+
+/* ═══════════════════════════════════════════
+   SERVER STATUS
+═══════════════════════════════════════════ */
+.server-status {
+  display:flex; align-items:center; gap:6px;
+  padding:6px 12px; border-radius:20px;
+  font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+  font-family:'JetBrains Mono',monospace;
+}
+.server-status.online  { background:rgba(34,215,143,0.1); color:var(--green); border:1px solid rgba(34,215,143,0.2); }
+.server-status.offline { background:rgba(244,63,94,0.1);  color:var(--red);   border:1px solid rgba(244,63,94,0.2); }
+.server-status.syncing { background:rgba(245,158,11,0.1); color:var(--orange); border:1px solid rgba(245,158,11,0.2); }
+.server-dot { width:6px; height:6px; border-radius:50%; background:currentColor; }
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+.toast {
+  position:fixed; bottom:90px; left:50%;
+  transform:translateX(-50%) translateY(30px);
+  background:var(--card2); border:1px solid var(--border2);
+  border-radius:14px; padding:11px 20px;
+  font-size:13px; font-weight:600; color:var(--text);
+  z-index:9999; opacity:0; pointer-events:none;
+  transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  white-space:nowrap; box-shadow:0 8px 32px rgba(0,0,0,0.6);
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ═══════════════════════════════════════════
+   SETTINGS PAGE
+═══════════════════════════════════════════ */
+.setting-item {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 0; border-bottom:1px solid var(--border);
+}
+.setting-item:last-child { border-bottom:none; padding-bottom:0; }
+.setting-lbl { font-size:13px; font-weight:600; color:var(--text); margin-bottom:3px; }
+.setting-sub { font-size:11px; color:var(--text2); }
+.setting-input {
+  background:rgba(255,255,255,0.06); border:1px solid var(--border2);
+  border-radius:10px; padding:8px 12px; color:var(--text);
+  font-family:'JetBrains Mono',monospace; font-size:12px;
+  width:200px; outline:none; direction:ltr;
+}
+.setting-input:focus { border-color:var(--blue); }
+.save-settings-btn {
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  border:none; border-radius:14px; padding:13px;
+  color:white; font-family:'Outfit',sans-serif; font-size:13px; font-weight:700;
+  cursor:pointer; width:100%; margin-top:16px; transition:opacity 0.2s;
+}
+
+/* ═══════════════════════════════════════════
+   DIVIDER / MISC
+═══════════════════════════════════════════ */
+.divider { display:flex; align-items:center; gap:12px; margin:4px 0 14px; }
+.divider-line { flex:1; height:1px; background:var(--border); }
+.divider-txt  { font-size:10px; color:var(--text2); font-weight:700; letter-spacing:1px; text-transform:uppercase; }
+
+.section-gap { height:6px; }
+
+/* Smooth animations for state changes */
+.fade-update { animation: fadeUpd 0.3s ease; }
+@keyframes fadeUpd { 0%{opacity:0.5;transform:scale(0.97)} 100%{opacity:1;transform:none} }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     ONBOARDING
+════════════════════════════════════════ -->
+<div id="onboardScreen">
+  <div class="onboard">
+    <div class="onboard-anim">🚗</div>
+    <div class="onboard-title">ParkSense</div>
+    <div class="onboard-desc">
+      מזהה אוטומטית מתי אתה נוסע, שומר את מיקום החניה שלך, ועוקב אחרי כל הנסיעות שלך.
+    </div>
+    <div class="onboard-features">
+      <div class="onboard-feature">
+        <span class="onboard-feature-icon">🧭</span>
+        <span class="onboard-feature-text"><strong>זיהוי אוטומטי</strong> — מבחין בין נסיעה להליכה לפי GPS ותאוצה</span>
+      </div>
+      <div class="onboard-feature">
+        <span class="onboard-feature-icon">🅿️</span>
+        <span class="onboard-feature-text"><strong>שמירת חניה</strong> — שומר מיקום כשאתה עוצר</span>
+      </div>
+      <div class="onboard-feature">
+        <span class="onboard-feature-icon">☁️</span>
+        <span class="onboard-feature-text"><strong>שמור בענן</strong> — ההיסטוריה נשמרת בשרת שלך</span>
+      </div>
+      <div class="onboard-feature">
+        <span class="onboard-feature-icon">📊</span>
+        <span class="onboard-feature-text"><strong>סטטיסטיקות</strong> — ראה כמה נסעת ומאיפה</span>
+      </div>
+    </div>
+    <button class="start-btn" id="startBtn">🔓 התחל ואפשר גישה</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MAIN APP
+════════════════════════════════════════ -->
+<div id="mainApp" style="display:none">
+  <div class="app">
+
+    <!-- TOP HEADER -->
+    <div class="top-header">
+      <div class="brand">
+        <div class="brand-logo">🅿</div>
+        <div class="brand-name">ParkSense</div>
+      </div>
+      <div class="server-status offline" id="serverStatus">
+        <div class="server-dot"></div>
+        <span id="serverStatusTxt">מנותק</span>
+      </div>
+    </div>
+
+    <!-- ── PAGE: LIVE ──────────────────── -->
+    <div class="page active" id="pageLive">
+
+      <!-- Motion State Card -->
+      <div class="state-card stationary" id="stateCard">
+        <div class="state-glow"></div>
+        <div class="card-title" style="margin-bottom:14px">
+          <div class="card-title-bar"></div>
+          מצב תנועה בזמן אמת
+        </div>
+        <div class="state-top">
+          <div class="state-emoji" id="stateEmoji">😴</div>
+          <div class="state-text">
+            <div class="state-sub">מצב נוכחי</div>
+            <div class="state-main stationary" id="stateMain">נייח</div>
+            <div class="since-label" id="sinceLabel" style="display:none">מאז: <span class="since-time" id="sinceTime"></span></div>
+          </div>
+        </div>
+
+        <div class="speed-gauge-wrap">
+          <div class="speed-row">
+            <span class="speed-lbl">מהירות ממוצעת</span>
+            <span class="speed-num" id="speedNum">0 קמ"ש</span>
+          </div>
+          <div class="speed-track"><div class="speed-fill" id="speedFill"></div></div>
+        </div>
+
+        <div class="metrics">
+          <div class="metric">
+            <span class="metric-n" id="mSpeed">0</span>
+            <span class="metric-l">קמ"ש</span>
+          </div>
+          <div class="metric">
+            <span class="metric-n" id="mAccel">—</span>
+            <span class="metric-l">תאוצה</span>
+          </div>
+          <div class="metric">
+            <span class="metric-n" id="mAccuracy">—</span>
+            <span class="metric-l">דיוק מ'</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Parking Card -->
+      <div class="parking-card" id="parkingCard">
+        <div class="card-title">
+          <div class="card-title-bar" style="background:linear-gradient(var(--purple),#a855f7)"></div>
+          מיקום החניה האחרונה
+        </div>
+        <div id="parkingContent">
+          <div class="no-park">
+            <div class="no-park-icon">🗺️</div>
+            <div class="no-park-txt">טרם נרשמה חניה</div>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="mapBtn" disabled onclick="openMap()">🗺️ נווט לחניה</button>
+        <button class="btn btn-ghost" onclick="manualSave()">📍 שמור מיקום ידנית</button>
+      </div>
+
+    </div><!-- /pageLive -->
+
+    <!-- ── PAGE: HISTORY ───────────────── -->
+    <div class="page" id="pageHistory">
+      <div class="card">
+        <div class="card-title">
+          <div class="card-title-bar"></div>
+          היסטוריית נסיעות
+        </div>
+        <div class="hist-list" id="histList">
+          <div class="empty-hist">
+            <div class="empty-hist-icon">🛣️</div>
+            <div class="empty-hist-txt">אין נסיעות עדיין</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <div class="card-title-bar" style="background:linear-gradient(var(--purple),#a855f7)"></div>
+          היסטוריית חניות
+        </div>
+        <div class="hist-list" id="parkHistList">
+          <div class="empty-hist">
+            <div class="empty-hist-icon">🅿️</div>
+            <div class="empty-hist-txt">אין חניות עדיין</div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /pageHistory -->
+
+    <!-- ── PAGE: STATS ─────────────────── -->
+    <div class="page" id="pageStats">
+      <div class="big-stat-card" id="bigStatCard">
+        <div class="big-stat-top">
+          <div class="big-stat-title">סה"כ נסיעות</div>
+          <div class="big-stat-icon">🚗</div>
+        </div>
+        <div class="big-stat-val" id="statTotalDrives">0</div>
+        <div class="big-stat-sub">נסיעות שתועדו</div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card" style="--accent-glow:rgba(34,215,143,0.12)">
+          <span class="stat-icon">🚶</span>
+          <span class="stat-val" id="statWalks">0</span>
+          <span class="stat-lbl">הליכות</span>
+        </div>
+        <div class="stat-card" style="--accent-glow:rgba(245,158,11,0.12)">
+          <span class="stat-icon">⏱️</span>
+          <span class="stat-val" id="statDriveMin">0</span>
+          <span class="stat-lbl">דקות נסיעה</span>
+        </div>
+        <div class="stat-card" style="--accent-glow:rgba(61,139,255,0.12)">
+          <span class="stat-icon">💨</span>
+          <span class="stat-val" id="statAvgSpeed">0</span>
+          <span class="stat-lbl">קמ"ש ממוצע</span>
+        </div>
+        <div class="stat-card" style="--accent-glow:rgba(244,63,94,0.12)">
+          <span class="stat-icon">🏎️</span>
+          <span class="stat-val" id="statMaxSpeed">0</span>
+          <span class="stat-lbl">קמ"ש מקסימום</span>
+        </div>
+      </div>
+
+      <button class="btn btn-ghost" onclick="loadStats()">🔄 רענן נתונים</button>
+    </div><!-- /pageStats -->
+
+    <!-- ── PAGE: SETTINGS ──────────────── -->
+    <div class="page" id="pageSettings">
+      <div class="card">
+        <div class="card-title">
+          <div class="card-title-bar"></div>
+          חיבור לשרת
+        </div>
+        <div class="setting-item">
+          <div>
+            <div class="setting-lbl">כתובת השרת (API URL)</div>
+            <div class="setting-sub">כתובת Render.com שלך</div>
+          </div>
+        </div>
+        <input class="setting-input" id="serverUrlInput" type="text"
+          placeholder="https://parksense.onrender.com"
+          style="width:100%;margin-top:8px"
+          value="">
+        <div class="setting-item">
+          <div>
+            <div class="setting-lbl">מזהה משתמש</div>
+            <div class="setting-sub">לנתח היסטוריה נפרדת לכל מכשיר</div>
+          </div>
+        </div>
+        <input class="setting-input" id="userIdInput" type="text"
+          placeholder="my-phone"
+          style="width:100%;margin-top:8px"
+          value="">
+        <button class="save-settings-btn" onclick="saveSettings()">💾 שמור הגדרות</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <div class="card-title-bar" style="background:linear-gradient(var(--orange),#f97316)"></div>
+          סף מהירות לזיהוי
+        </div>
+        <div class="setting-item">
+          <div>
+            <div class="setting-lbl">נסיעה (קמ"ש)</div>
+            <div class="setting-sub">מעל מהירות זו = נסיעה</div>
+          </div>
+          <input class="setting-input" id="driveThreshInput" type="number" value="15" style="width:70px">
+        </div>
+        <div class="setting-item">
+          <div>
+            <div class="setting-lbl">הליכה (קמ"ש)</div>
+            <div class="setting-sub">מעל מהירות זו = הליכה</div>
+          </div>
+          <input class="setting-input" id="walkThreshInput" type="number" value="2" style="width:70px">
+        </div>
+        <button class="save-settings-btn" onclick="saveSettings()">💾 שמור</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <div class="card-title-bar" style="background:linear-gradient(var(--red),#fb923c)"></div>
+          אפס נתונים
+        </div>
+        <button class="btn btn-danger" onclick="clearLocalData()">🗑️ נקה נתוני אפליקציה מקומיים</button>
+      </div>
+
+      <div style="text-align:center;padding:20px 0;font-size:11px;color:var(--text2)">
+        ParkSense v1.0 • by Claude
+      </div>
+    </div><!-- /pageSettings -->
+
+  </div><!-- /app -->
+
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-page="pageLive" onclick="switchTab(this,'pageLive')">
+      <span class="tab-icon">🔴</span>
+      <span class="tab-lbl">חי</span>
+    </button>
+    <button class="tab-btn" data-page="pageHistory" onclick="switchTab(this,'pageHistory')">
+      <span class="tab-icon">📋</span>
+      <span class="tab-lbl">היסטוריה</span>
+    </button>
+    <button class="tab-btn" data-page="pageStats" onclick="switchTab(this,'pageStats')">
+      <span class="tab-icon">📊</span>
+      <span class="tab-lbl">סטטיסטיקות</span>
+    </button>
+    <button class="tab-btn" data-page="pageSettings" onclick="switchTab(this,'pageSettings')">
+      <span class="tab-icon">⚙️</span>
+      <span class="tab-lbl">הגדרות</span>
+    </button>
+  </div>
+</div><!-- /mainApp -->
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ─── Config & State ────────────────────────────────────────────────────────────
+let CFG = {
+  serverUrl:    localStorage.getItem('ps_server') || '',
+  userId:       localStorage.getItem('ps_userid') || 'default',
+  driveThresh:  parseFloat(localStorage.getItem('ps_dthresh') || '15'),
+  walkThresh:   parseFloat(localStorage.getItem('ps_wthresh') || '2'),
+};
+
+let STATE = {
+  current:      'stationary',
+  sinceTime:    null,
+  speed:        0,
+  accel:        0,
+  accuracy:     null,
+  speedBuffer:  [],
+  stateVotes:   0,
+  pendingState: null,
+  lastDrivingLoc: null,
+  tripStart:    null,
+  tripStartLat: null,
+  tripStartLng: null,
+  tripMaxSpeed: 0,
+  tripSpeeds:   [],
+  lastPosition: null,
+  serverOnline: false,
+};
+
+const VOTE_NEEDED = 4; // consecutive GPS reads to confirm state change
+
+// ─── Init ──────────────────────────────────────────────────────────────────────
+document.getElementById('startBtn').onclick = init;
+
+function init() {
+  document.getElementById('onboardScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  loadSettings();
+  loadLocal();
+  updateParkingUI(STATE.lastDrivingLoc);
+  startGPS();
+  startMotion();
+  checkServerStatus();
+  loadHistory();
+  loadStats();
+}
+
+// ─── Settings ──────────────────────────────────────────────────────────────────
+function loadSettings() {
+  document.getElementById('serverUrlInput').value  = CFG.serverUrl;
+  document.getElementById('userIdInput').value     = CFG.userId;
+  document.getElementById('driveThreshInput').value = CFG.driveThresh;
+  document.getElementById('walkThreshInput').value  = CFG.walkThresh;
+}
+
+function saveSettings() {
+  CFG.serverUrl   = document.getElementById('serverUrlInput').value.trim().replace(/\/$/, '');
+  CFG.userId      = document.getElementById('userIdInput').value.trim() || 'default';
+  CFG.driveThresh = parseFloat(document.getElementById('driveThreshInput').value) || 15;
+  CFG.walkThresh  = parseFloat(document.getElementById('walkThreshInput').value) || 2;
+  localStorage.setItem('ps_server',  CFG.serverUrl);
+  localStorage.setItem('ps_userid',  CFG.userId);
+  localStorage.setItem('ps_dthresh', CFG.driveThresh);
+  localStorage.setItem('ps_wthresh', CFG.walkThresh);
+  toast('✅ הגדרות נשמרו');
+  checkServerStatus();
+}
+
+function clearLocalData() {
+  if (!confirm('למחוק את כל הנתונים המקומיים?')) return;
+  localStorage.clear();
+  location.reload();
+}
+
+// ─── Local Storage ─────────────────────────────────────────────────────────────
+function loadLocal() {
+  try {
+    const p = localStorage.getItem('ps_last_park');
+    if (p) STATE.lastDrivingLoc = JSON.parse(p);
+  } catch(e) {}
+}
+
+function saveLocal() {
+  if (STATE.lastDrivingLoc)
+    localStorage.setItem('ps_last_park', JSON.stringify(STATE.lastDrivingLoc));
+}
+
+// ─── Server API ────────────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  if (!CFG.serverUrl) return null;
+  try {
+    const r = await fetch(CFG.serverUrl + path, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(8000)
+    });
+    return await r.json();
+  } catch(e) {
+    console.warn('API error:', e.message);
+    return null;
+  }
+}
+
+async function checkServerStatus() {
+  if (!CFG.serverUrl) { setServerStatus('offline', 'אין שרת'); return; }
+  setServerStatus('syncing', 'מתחבר...');
+  const r = await api('GET', '/api/health');
+  if (r?.status === 'ok') {
+    setServerStatus('online', 'מחובר');
+    STATE.serverOnline = true;
+    // Pull latest parking from server
+    const p = await api('GET', `/api/parking/last?userId=${CFG.userId}`);
+    if (p?.parking && !STATE.lastDrivingLoc) {
+      STATE.lastDrivingLoc = {
+        lat: p.parking.lat, lng: p.parking.lng,
+        accuracy: p.parking.accuracy, time: p.parking.savedAt
+      };
+      saveLocal();
+      updateParkingUI(STATE.lastDrivingLoc);
+    }
+  } else {
+    setServerStatus('offline', 'לא זמין');
+    STATE.serverOnline = false;
+  }
+}
+
+function setServerStatus(cls, txt) {
+  const el = document.getElementById('serverStatus');
+  el.className = 'server-status ' + cls;
+  document.getElementById('serverStatusTxt').textContent = txt;
+}
+
+// ─── GPS ───────────────────────────────────────────────────────────────────────
+function startGPS() {
+  if (!('geolocation' in navigator)) { toast('⚠️ GPS לא זמין'); return; }
+  navigator.geolocation.watchPosition(onPosition, onGeoErr, {
+    enableHighAccuracy: true,
+    maximumAge: 2000,
+    timeout: 15000
+  });
+}
+
+function onGeoErr(e) { console.warn('GPS error:', e.code); }
+
+function onPosition(pos) {
+  const { latitude: lat, longitude: lng, speed, accuracy } = pos.coords;
+  STATE.accuracy    = Math.round(accuracy);
+  STATE.lastPosition = { lat, lng, accuracy };
+
+  let kmh = 0;
+  if (speed !== null && speed >= 0) {
+    kmh = speed * 3.6;
+    STATE.speedBuffer.push(kmh);
+    if (STATE.speedBuffer.length > 6) STATE.speedBuffer.shift();
+  }
+
+  STATE.speed = STATE.speedBuffer.length > 0
+    ? STATE.speedBuffer.reduce((a,b)=>a+b,0)/STATE.speedBuffer.length : 0;
+
+  if (STATE.current === 'driving') {
+    if (kmh > STATE.tripMaxSpeed) STATE.tripMaxSpeed = kmh;
+    STATE.tripSpeeds.push(kmh);
+  }
+
+  determineState(pos);
+  updateLiveUI();
+}
+
+// ─── State Machine ─────────────────────────────────────────────────────────────
+function determineState(pos) {
+  const s = STATE.speed;
+  let candidate;
+
+  if (s >= CFG.driveThresh) candidate = 'driving';
+  else if (s >= CFG.walkThresh) candidate = 'walking';
+  else {
+    // fallback: if accel shows movement and we were walking, keep walking briefly
+    candidate = (STATE.accel > 1.2 && STATE.current === 'walking') ? 'walking' : 'stationary';
+  }
+
+  if (candidate === STATE.current) {
+    STATE.stateVotes  = 0;
+    STATE.pendingState = null;
+    return;
+  }
+
+  if (candidate === STATE.pendingState) {
+    STATE.stateVotes++;
+  } else {
+    STATE.pendingState = candidate;
+    STATE.stateVotes  = 1;
+  }
+
+  if (STATE.stateVotes >= VOTE_NEEDED) {
+    transitionState(STATE.current, candidate, pos);
+    STATE.stateVotes   = 0;
+    STATE.pendingState = null;
+  }
+}
+
+function transitionState(from, to, pos) {
+  const now = new Date();
+
+  // Finish previous trip
+  if (from === 'driving' && STATE.tripStart) {
+    const avgSpd = STATE.tripSpeeds.length
+      ? STATE.tripSpeeds.reduce((a,b)=>a+b,0)/STATE.tripSpeeds.length : 0;
+    saveTrip({
+      type: 'driving', startTime: STATE.tripStart, endTime: now,
+      startLat: STATE.tripStartLat, startLng: STATE.tripStartLng,
+      endLat: pos.coords.latitude, endLng: pos.coords.longitude,
+      maxSpeed: STATE.tripMaxSpeed, avgSpeed: avgSpd
+    });
+  }
+  if (from === 'walking' && STATE.tripStart) {
+    saveTrip({ type: 'walking', startTime: STATE.tripStart, endTime: now });
+  }
+
+  // On stop driving → save parking
+  if (from === 'driving' && to !== 'driving') {
+    const loc = {
+      lat: pos.coords.latitude, lng: pos.coords.longitude,
+      accuracy: pos.coords.accuracy, time: now.toISOString()
+    };
+    STATE.lastDrivingLoc = loc;
+    saveLocal();
+    saveParking(loc);
+    updateParkingUI(loc);
+    toast('🅿️ מיקום חניה נשמר!');
+  }
+
+  // On start driving
+  if (to === 'driving') {
+    STATE.tripStart    = now;
+    STATE.tripStartLat = pos.coords.latitude;
+    STATE.tripStartLng = pos.coords.longitude;
+    STATE.tripMaxSpeed = 0;
+    STATE.tripSpeeds   = [];
+    toast('🚗 זוהתה נסיעה!');
+  }
+  if (to === 'walking') {
+    STATE.tripStart = now;
+    toast('🚶 זוהתה הליכה');
+  }
+  if (to === 'stationary') {
+    STATE.tripStart = null;
+  }
+
+  STATE.current   = to;
+  STATE.sinceTime = now;
+  updateStateUI(to);
+}
+
+// ─── Motion / Accelerometer ────────────────────────────────────────────────────
+function startMotion() {
+  const setup = () => {
+    window.addEventListener('devicemotion', e => {
+      const a = e.accelerationIncludingGravity;
+      if (!a) return;
+      const mag = Math.sqrt((a.x||0)**2+(a.y||0)**2+(a.z||0)**2);
+      STATE.accel = mag / 9.8;
+      document.getElementById('mAccel').textContent = STATE.accel.toFixed(2);
+    });
+  };
+
+  if (typeof DeviceMotionEvent !== 'undefined' &&
+      typeof DeviceMotionEvent.requestPermission === 'function') {
+    DeviceMotionEvent.requestPermission().then(r => { if(r==='granted') setup(); }).catch(()=>{});
+  } else {
+    setup();
+  }
+}
+
+// ─── API Save ──────────────────────────────────────────────────────────────────
+async function saveParking(loc) {
+  if (!STATE.serverOnline) return;
+  const r = await api('POST', '/api/parking', {
+    userId: CFG.userId, lat: loc.lat, lng: loc.lng, accuracy: loc.accuracy
+  });
+  if (r?.success) loadHistory(); // refresh
+}
+
+async function saveTrip(trip) {
+  if (!STATE.serverOnline) return;
+  await api('POST', '/api/trips', { userId: CFG.userId, ...trip });
+  loadHistory();
+  loadStats();
+}
+
+async function manualSave() {
+  if (!STATE.lastPosition) { toast('⏳ ממתין למיקום GPS...'); return; }
+  const loc = {
+    lat: STATE.lastPosition.lat, lng: STATE.lastPosition.lng,
+    accuracy: STATE.lastPosition.accuracy, time: new Date().toISOString()
+  };
+  STATE.lastDrivingLoc = loc;
+  saveLocal();
+  await saveParking(loc);
+  updateParkingUI(loc);
+  toast('📍 מיקום נשמר!');
+}
+
+// ─── UI Updates ────────────────────────────────────────────────────────────────
+const STATE_DATA = {
+  driving:    { emoji:'🚗', label:'נוסע', cls:'driving' },
+  walking:    { emoji:'🚶', label:'הולך', cls:'walking' },
+  stationary: { emoji:'😴', label:'נייח', cls:'stationary' },
+};
+
+function updateStateUI(newState) {
+  const d = STATE_DATA[newState];
+  const card = document.getElementById('stateCard');
+  card.className = 'state-card ' + d.cls;
+
+  const emoji = document.getElementById('stateEmoji');
+  emoji.textContent = d.emoji;
+  emoji.classList.remove('animate');
+  void emoji.offsetWidth; // reflow
+  emoji.classList.add('animate');
+
+  const main = document.getElementById('stateMain');
+  main.textContent = d.label;
+  main.className = 'state-main ' + d.cls;
+
+  if (STATE.sinceTime) {
+    document.getElementById('sinceLabel').style.display = 'block';
+    document.getElementById('sinceTime').textContent = fmtTime(STATE.sinceTime);
+  }
+}
+
+function updateLiveUI() {
+  const spd = Math.round(STATE.speed);
+  const pct  = Math.min((STATE.speed / 130) * 100, 100);
+  document.getElementById('mSpeed').textContent = spd;
+  document.getElementById('speedNum').textContent = spd + ' קמ"ש';
+  document.getElementById('speedFill').style.width = pct + '%';
+  document.getElementById('mAccuracy').textContent = STATE.accuracy || '—';
+}
+
+function updateParkingUI(loc) {
+  const card    = document.getElementById('parkingCard');
+  const content = document.getElementById('parkingContent');
+  const mapBtn  = document.getElementById('mapBtn');
+
+  if (!loc) {
+    card.classList.remove('has-spot');
+    content.innerHTML = `<div class="no-park"><div class="no-park-icon">🗺️</div><div class="no-park-txt">טרם נרשמה חניה</div></div>`;
+    mapBtn.disabled = true;
+    return;
+  }
+
+  card.classList.add('has-spot');
+  const when = new Date(loc.time);
+  const ago  = fmtAgo(when);
+  const acc  = loc.accuracy ? `±${Math.round(loc.accuracy)}מ'` : '';
+  mapBtn.disabled = false;
+
+  content.innerHTML = `
+    <div class="park-inner">
+      <div class="park-icon-wrap">🅿️</div>
+      <div class="park-info">
+        <div class="park-when">${fmtDate(when)}</div>
+        <div class="park-ago">${ago}</div>
+        <div class="park-coords">${loc.lat.toFixed(6)}, ${loc.lng.toFixed(6)}</div>
+        ${acc ? `<div class="park-acc">דיוק: ${acc}</div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function openMap() {
+  if (!STATE.lastDrivingLoc) return;
+  const { lat, lng } = STATE.lastDrivingLoc;
+  // Works on Android and iOS
+  window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+}
+
+// ─── History ───────────────────────────────────────────────────────────────────
+async function loadHistory() {
+  if (!STATE.serverOnline) return;
+
+  const [trips, parks] = await Promise.all([
+    api('GET', `/api/trips?userId=${CFG.userId}&limit=30`),
+    api('GET', `/api/parking/history?userId=${CFG.userId}&limit=15`)
+  ]);
+
+  const tripList = document.getElementById('histList');
+  const parkList = document.getElementById('parkHistList');
+
+  if (trips?.trips?.length) {
+    tripList.innerHTML = trips.trips.map(t => `
+      <div class="hist-item">
+        <div class="hist-icon ${t.type}">${t.type==='driving'?'🚗':'🚶'}</div>
+        <div class="hist-info">
+          <div class="hist-title">${t.type==='driving'?'נסיעה':'הליכה'}</div>
+          <div class="hist-sub">${fmtDate(new Date(t.startTime))}</div>
+          ${t.avgSpeed ? `<div class="hist-meta">ממוצע: ${Math.round(t.avgSpeed)} קמ"ש | מקס': ${Math.round(t.maxSpeed||0)} קמ"ש</div>` : ''}
+        </div>
+        <div class="hist-dur">${t.durationMin || 0}ד'</div>
+      </div>
+    `).join('');
+  } else {
+    tripList.innerHTML = `<div class="empty-hist"><div class="empty-hist-icon">🛣️</div><div class="empty-hist-txt">אין נסיעות עדיין</div></div>`;
+  }
+
+  if (parks?.parkings?.length) {
+    parkList.innerHTML = parks.parkings.map(p => `
+      <div class="hist-item">
+        <div class="hist-icon driving">🅿️</div>
+        <div class="hist-info">
+          <div class="hist-title">חניה</div>
+          <div class="hist-sub">${fmtDate(new Date(p.savedAt))}</div>
+          <div class="hist-meta">${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}</div>
+        </div>
+        <div class="hist-dur">${fmtAgo(new Date(p.savedAt))}</div>
+      </div>
+    `).join('');
+  } else {
+    parkList.innerHTML = `<div class="empty-hist"><div class="empty-hist-icon">🅿️</div><div class="empty-hist-txt">אין חניות עדיין</div></div>`;
+  }
+}
+
+async function loadStats() {
+  if (!STATE.serverOnline) return;
+  const s = await api('GET', `/api/stats?userId=${CFG.userId}`);
+  if (!s) return;
+  document.getElementById('statTotalDrives').textContent = s.totalDrives || 0;
+  document.getElementById('statWalks').textContent       = s.totalWalks  || 0;
+  document.getElementById('statDriveMin').textContent    = s.totalDriveMinutes || 0;
+  document.getElementById('statAvgSpeed').textContent    = s.avgSpeed || 0;
+  document.getElementById('statMaxSpeed').textContent    = s.maxSpeed || 0;
+}
+
+// ─── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(btn, pageId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(pageId).classList.add('active');
+  if (pageId === 'pageHistory') loadHistory();
+  if (pageId === 'pageStats')   loadStats();
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ─── Formatters ────────────────────────────────────────────────────────────────
+function fmtDate(d) {
+  return d.toLocaleString('he-IL', {
+    day:'2-digit', month:'2-digit', year:'2-digit',
+    hour:'2-digit', minute:'2-digit'
+  });
+}
+
+function fmtTime(d) {
+  return d.toLocaleTimeString('he-IL', { hour:'2-digit', minute:'2-digit' });
+}
+
+function fmtAgo(d) {
+  const diff = Date.now() - d.getTime();
+  const m = Math.round(diff / 60000);
+  if (m < 1)   return 'לפני רגע';
+  if (m < 60)  return `לפני ${m} דקות`;
+  const h = Math.round(m / 60);
+  if (h < 24)  return `לפני ${h} שעות`;
+  const days = Math.round(h / 24);
+  return `לפני ${days} ימים`;
+}
+
+// ─── Keep alive / polling ──────────────────────────────────────────────────────
+// Check server every 60 sec
+setInterval(() => {
+  if (document.getElementById('mainApp').style.display !== 'none') {
+    checkServerStatus();
+  }
+}, 60000);
+</script>
+</body>
+</html>

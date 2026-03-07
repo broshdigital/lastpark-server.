@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: parksense
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: MONGODB_URI
+        sync: false   # you'll paste this in the Render dashboard
+      - key: PORT
+        value: 3000
+    plan: free
