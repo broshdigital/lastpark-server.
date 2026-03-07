@@ -7,17 +7,21 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ─── Middleware ────────────────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
-// ─── MongoDB Connection ────────────────────────────────────────────────────────
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/parksense')
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.error('❌ MongoDB error:', err));
 
-// ─── Schemas ───────────────────────────────────────────────────────────────────
+function haversineMeters(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 const TripSchema = new mongoose.Schema({
   userId:    { type: String, default: 'default' },
@@ -46,24 +50,24 @@ const ParkingSchema = new mongoose.Schema({
 const Trip    = mongoose.model('Trip', TripSchema);
 const Parking = mongoose.model('Parking', ParkingSchema);
 
-// ─── API Routes ────────────────────────────────────────────────────────────────
-
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
-// ── PARKING ──────────────────────────────────────────
-
-// Save parking location
 app.post('/api/parking', async (req, res) => {
   try {
     const { lat, lng, accuracy, address, userId = 'default' } = req.body;
     if (!lat || !lng) return res.status(400).json({ error: 'lat/lng required' });
 
-    // Deactivate old parking records for user
-    await Parking.updateMany({ userId, isActive: true }, { isActive: false });
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const recentParkings = await Parking.find({ userId, savedAt: { $gte: fiveMinAgo } });
+    for (const existing of recentParkings) {
+      if (haversineMeters(existing.lat, existing.lng, lat, lng) < 200) {
+        return res.status(200).json({ success: true, parking: existing, deduplicated: true });
+      }
+    }
 
+    await Parking.updateMany({ userId, isActive: true }, { isActive: false });
     const parking = await Parking.create({ userId, lat, lng, accuracy, address });
     res.status(201).json({ success: true, parking });
   } catch (err) {
@@ -72,7 +76,6 @@ app.post('/api/parking', async (req, res) => {
   }
 });
 
-// Get last active parking
 app.get('/api/parking/last', async (req, res) => {
   try {
     const { userId = 'default' } = req.query;
@@ -83,7 +86,6 @@ app.get('/api/parking/last', async (req, res) => {
   }
 });
 
-// Get parking history
 app.get('/api/parking/history', async (req, res) => {
   try {
     const { userId = 'default', limit = 10 } = req.query;
@@ -96,9 +98,6 @@ app.get('/api/parking/history', async (req, res) => {
   }
 });
 
-// ── TRIPS ─────────────────────────────────────────────
-
-// Save a completed trip
 app.post('/api/trips', async (req, res) => {
   try {
     const {
@@ -110,36 +109,28 @@ app.post('/api/trips', async (req, res) => {
       return res.status(400).json({ error: 'type, startTime, endTime required' });
 
     const durationMin = Math.round((new Date(endTime) - new Date(startTime)) / 60000);
-
     const trip = await Trip.create({
       userId, type, startTime, endTime, durationMin,
       startLat, startLng, endLat, endLng, maxSpeed, avgSpeed
     });
-
     res.status(201).json({ success: true, trip });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Get trip history
 app.get('/api/trips', async (req, res) => {
   try {
     const { userId = 'default', limit = 30, type } = req.query;
     const filter = { userId };
     if (type) filter.type = type;
-
-    const trips = await Trip.find(filter)
-      .sort({ startTime: -1 })
-      .limit(parseInt(limit));
-
+    const trips = await Trip.find(filter).sort({ startTime: -1 }).limit(parseInt(limit));
     res.json({ trips });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Get last driving trip
 app.get('/api/trips/last-drive', async (req, res) => {
   try {
     const { userId = 'default' } = req.query;
@@ -150,12 +141,11 @@ app.get('/api/trips/last-drive', async (req, res) => {
   }
 });
 
-// Stats summary
 app.get('/api/stats', async (req, res) => {
   try {
     const { userId = 'default' } = req.query;
-    const totalDrives  = await Trip.countDocuments({ userId, type: 'driving' });
-    const totalWalks   = await Trip.countDocuments({ userId, type: 'walking' });
+    const totalDrives = await Trip.countDocuments({ userId, type: 'driving' });
+    const totalWalks  = await Trip.countDocuments({ userId, type: 'walking' });
     const driveAgg = await Trip.aggregate([
       { $match: { userId, type: 'driving' } },
       { $group: { _id: null, totalMin: { $sum: '$durationMin' }, avgSpeed: { $avg: '$avgSpeed' }, maxSpeed: { $max: '$maxSpeed' } } }
@@ -171,12 +161,10 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-// ─── Catch-all → serve frontend ───────────────────────────────────────────────
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-// ─── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`🚗 ParkSense server running on port ${PORT}`);
 });
