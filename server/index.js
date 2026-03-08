@@ -71,9 +71,9 @@ app.post('/api/parking', async (req, res) => {
     const { lat, lng, accuracy, address, userId = 'default' } = req.body;
     if (!lat || !lng) return res.status(400).json({ error: 'lat/lng required' });
 
-    // Deduplicate: skip if a recent entry exists within 5 min and 200m
-    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
-    const recentParkings = await Parking.find({ userId, savedAt: { $gte: fiveMinAgo } });
+    // Deduplicate: skip if a recent entry exists within 2 min and 200m
+    const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000);
+    const recentParkings = await Parking.find({ userId, savedAt: { $gte: twoMinAgo } });
     for (const existing of recentParkings) {
       if (haversineMeters(existing.lat, existing.lng, lat, lng) < 200) {
         return res.status(200).json({ success: true, parking: existing, deduplicated: true });
