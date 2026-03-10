@@ -50,7 +50,8 @@ const ParkingSchema = new mongoose.Schema({
   accuracy: { type: Number },
   address:  { type: String },
   savedAt:  { type: Date, default: Date.now },
-  isActive: { type: Boolean, default: true }
+  isActive: { type: Boolean, default: true },
+  source:   { type: String, enum: ['auto', 'manual'], default: 'manual' }
 }, { timestamps: true });
 
 const Trip    = mongoose.model('Trip', TripSchema);
@@ -68,8 +69,10 @@ app.get('/api/health', (req, res) => {
 // Save parking location
 app.post('/api/parking', async (req, res) => {
   try {
-    const { lat, lng, accuracy, address, userId = 'default' } = req.body;
+    const { lat, lng, accuracy, address, userId = 'default', source = 'manual' } = req.body;
     if (!lat || !lng) return res.status(400).json({ error: 'lat/lng required' });
+    if (lat < 29 || lat > 33.5 || lng < 34 || lng > 35.9)
+      return res.status(400).json({ error: 'coordinates outside valid range' });
 
     // Deduplicate: skip if a recent entry exists within 2 min and 200m
     const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000);
@@ -83,7 +86,7 @@ app.post('/api/parking', async (req, res) => {
     // Deactivate old parking records for user
     await Parking.updateMany({ userId, isActive: true }, { isActive: false });
 
-    const parking = await Parking.create({ userId, lat, lng, accuracy, address });
+    const parking = await Parking.create({ userId, lat, lng, accuracy, address, source });
     res.status(201).json({ success: true, parking });
   } catch (err) {
     console.error(err);
@@ -95,7 +98,11 @@ app.post('/api/parking', async (req, res) => {
 app.get('/api/parking/last', async (req, res) => {
   try {
     const { userId = 'default' } = req.query;
-    const parking = await Parking.findOne({ userId, isActive: true }).sort({ savedAt: -1 });
+    const parking = await Parking.findOne({
+      userId, isActive: true,
+      lat: { $gt: 29, $lt: 33.5 },
+      lng: { $gt: 34,  $lt: 35.9 }
+    }).sort({ savedAt: -1 });
     res.json({ parking: parking || null });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -106,7 +113,7 @@ app.get('/api/parking/last', async (req, res) => {
 app.get('/api/parking/history', async (req, res) => {
   try {
     const { userId = 'default', limit = 10 } = req.query;
-    const parkings = await Parking.find({ userId })
+    const parkings = await Parking.find({ userId, source: 'auto' })
       .sort({ savedAt: -1 })
       .limit(parseInt(limit));
     res.json({ parkings });
