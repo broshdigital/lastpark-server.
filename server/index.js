@@ -113,7 +113,7 @@ app.get('/api/parking/last', async (req, res) => {
 app.get('/api/parking/history', async (req, res) => {
   try {
     const { userId = 'default', limit = 10 } = req.query;
-    const parkings = await Parking.find({ userId, source: 'auto' })
+    const parkings = await Parking.find({ userId })
       .sort({ savedAt: -1 })
       .limit(parseInt(limit));
     res.json({ parkings });
